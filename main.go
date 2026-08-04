@@ -17,6 +17,8 @@ func main() {
 		fileServer.ServeHTTP(w, r)
 	})
 
+	mux.Handle("/assets", http.StripPrefix("/assets/", fileServer))
+
 	_ = http.ListenAndServe(":8080", mux)
 
 }
