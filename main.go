@@ -7,11 +7,16 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-	}
+	fileServer := http.FileServer(http.Dir("."))
 
-	// if err := srv.ListenAndServe(); err != nil {}
-	_ = srv.ListenAndServe()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "index.html")
+			return
+		}
+		fileServer.ServeHTTP(w, r)
+	})
+
+	_ = http.ListenAndServe(":8080", mux)
+
 }
