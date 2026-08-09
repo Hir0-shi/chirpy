@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type validateChirpRequest struct {
@@ -11,31 +12,54 @@ type validateChirpRequest struct {
 }
 
 type validateChirpResponseValid struct {
-	Valid bool `json:"valid"`
-}
-
-type validateChirpResponseErr struct {
-	Error string `json:"error"`
+	CleanedBody string `json:"cleaned_body"`
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(validateChirpResponseErr{Error: msg})
+	type errorResponse struct {
+		Error string `json:"error"`
+	}
+	respondWithJSON(w, code, errorResponse{
+		Error: msg,
+	})
 }
 
-// ■ interface{} can be replaced by any
-// func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 func respondWithJSON(w http.ResponseWriter, code int, payload any) {
+	b, err := json.Marshal(payload)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(payload)
+	_, _ = w.Write(b)
+}
+
+func cleanUpProfaneWords(body string) string {
+	const replacement = "****"
+	profaneWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+
+	// split by space, because we have words with punctuation attached that should be match
+	parts := strings.Split(body, " ")
+
+	for i, j := range parts {
+		lower := strings.ToLower(j)
+		if _, isBad := profaneWords[lower]; isBad {
+			parts[i] = replacement
+		}
+	}
+
+	return strings.Join(parts, " ")
 }
 
 func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	var req validateChirpRequest
 	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
 
 	if err := dec.Decode(&req); err != nil {
 		log.Printf("Error decoding chirp request: %s", err)
@@ -47,6 +71,6 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
-
-	respondWithJSON(w, http.StatusOK, validateChirpResponseValid{Valid: true})
+	cleaned := cleanUpProfaneWords(req.Body)
+	respondWithJSON(w, http.StatusOK, validateChirpResponseValid{CleanedBody: cleaned})
 }
