@@ -15,6 +15,7 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	dbQueries      *database.Queries
+	tokenSecret    string
 }
 
 func main() {
@@ -31,7 +32,8 @@ func main() {
 	const port = "8080"
 
 	apiCfg := apiConfig{
-		dbQueries: dbQueries,
+		dbQueries:   dbQueries,
+		tokenSecret: os.Getenv("JWT_SECRET"),
 	}
 
 	mux := http.NewServeMux()
