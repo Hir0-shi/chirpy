@@ -16,10 +16,11 @@ type createUserRequest struct {
 }
 
 type User struct {
-	ID        string `json:"id"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	Email     string `json:"email"`
+	ID          string `json:"id"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+	Email       string `json:"email"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -53,10 +54,11 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resp := User{
-		ID:        userRow.ID.String(),
-		CreatedAt: userRow.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: userRow.UpdatedAt.UTC().Format(time.RFC3339),
-		Email:     userRow.Email,
+		ID:          userRow.ID.String(),
+		CreatedAt:   userRow.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:   userRow.UpdatedAt.UTC().Format(time.RFC3339),
+		Email:       userRow.Email,
+		IsChirpyRed: userRow.IsChirpyRed,
 	}
 
 	respondWithJSON(w, http.StatusCreated, resp)

@@ -50,10 +50,11 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resp := User{
-		ID:        userRow.ID.String(),
-		CreatedAt: userRow.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: userRow.UpdatedAt.UTC().Format(time.RFC3339),
-		Email:     userRow.Email,
+		ID:          userRow.ID.String(),
+		CreatedAt:   userRow.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:   userRow.UpdatedAt.UTC().Format(time.RFC3339),
+		Email:       userRow.Email,
+		IsChirpyRed: userRow.IsChirpyRed,
 	}
 
 	respondWithJSON(w, http.StatusOK, resp)
