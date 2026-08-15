@@ -60,8 +60,22 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return "", errors.New("missing authorization header")
 	}
 
-	parts := strings.Split(authorization, " ")
+	parts := strings.Fields(authorization)
 	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "", errors.New("invalid authorization header")
+	}
+
+	return parts[1], nil
+}
+
+func GetAPIKey(headers http.Header) (string, error) {
+	authorization := headers.Get("Authorization")
+	if authorization == "" {
+		return "", errors.New("missing authorization header")
+	}
+
+	parts := strings.Fields(authorization)
+	if len(parts) != 2 || parts[0] != "ApiKey" {
 		return "", errors.New("invalid authorization header")
 	}
 

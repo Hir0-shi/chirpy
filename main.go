@@ -16,6 +16,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	dbQueries      *database.Queries
 	tokenSecret    string
+	polkaKey       string
 }
 
 func main() {
@@ -34,6 +35,7 @@ func main() {
 	apiCfg := apiConfig{
 		dbQueries:   dbQueries,
 		tokenSecret: os.Getenv("JWT_SECRET"),
+		polkaKey:    os.Getenv("POLKA_KEY"),
 	}
 
 	mux := http.NewServeMux()
