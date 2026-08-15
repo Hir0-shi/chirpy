@@ -15,6 +15,12 @@ func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 
 	cfg.fileserverHits.Store(0)
 
+	if err := cfg.dbQueries.DeleteAllRefreshTokens(r.Context()); err != nil {
+		log.Printf("DeleteAllRefreshTokens error: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+		return
+	}
+
 	if err := cfg.dbQueries.DeleteAllUsers(r.Context()); err != nil {
 		log.Printf("DeleteAllUsers error: %v", err)
 		respondWithError(w, http.StatusInternalServerError, "Something went wrong")

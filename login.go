@@ -3,14 +3,14 @@ package main
 import (
 	"encoding/json"
 	"github.com/Hir0-shi/chirpy/internal/auth"
+	"github.com/Hir0-shi/chirpy/internal/database"
 	"net/http"
 	"time"
 )
 
 type loginRequest struct {
-	Email            string `json:"email"`
-	Password         string `json:"password"`
-	ExpiresInSeconds *int   `json:"expires_in_seconds"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
@@ -37,29 +37,37 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresIn := time.Hour
-	if req.ExpiresInSeconds != nil {
-		expiresIn = min(time.Duration(*req.ExpiresInSeconds)*time.Second, time.Hour)
-	}
-
-	token, err := auth.MakeJWT(userRow.ID, cfg.tokenSecret, expiresIn)
+	token, err := auth.MakeJWT(userRow.ID, cfg.tokenSecret, time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
 
+	refreshToken := auth.MakeRefreshToken()
+
+	if err := cfg.dbQueries.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    userRow.ID,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
+	}); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+		return
+	}
+
 	resp := struct {
-		ID        string `json:"id"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
-		Email     string `json:"email"`
-		Token     string `json:"token"`
+		ID           string `json:"id"`
+		CreatedAt    string `json:"created_at"`
+		UpdatedAt    string `json:"updated_at"`
+		Email        string `json:"email"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}{
-		ID:        userRow.ID.String(),
-		CreatedAt: userRow.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt: userRow.UpdatedAt.UTC().Format(time.RFC3339),
-		Email:     userRow.Email,
-		Token:     token,
+		ID:           userRow.ID.String(),
+		CreatedAt:    userRow.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:    userRow.UpdatedAt.UTC().Format(time.RFC3339),
+		Email:        userRow.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 
 	respondWithJSON(w, http.StatusOK, resp)
